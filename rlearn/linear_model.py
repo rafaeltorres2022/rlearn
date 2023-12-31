@@ -1,8 +1,8 @@
 import numpy as np
 import pandas as pd
-from rlearn.activation_functions import activation_selector
-from rlearn.metrics import loss_selector
-from rlearn.solvers import solver_selector
+from rlearn.activation_functions import activation_factory
+from rlearn.metrics import loss_factory
+from rlearn.solvers import solver_factory
 from sklearn.metrics import mean_squared_error
 
 class Perceptron():
@@ -13,14 +13,14 @@ class Perceptron():
         self.b = 0
         #self.lr = learning_rate
         self.epochs = epochs
-        self.activation = activation_selector(activation)
-        self.loss_function = loss_selector(loss_function)
+        self.activation = activation_factory(activation)
+        self.loss_function = loss_factory(loss_function)
         self.error = 0
         self.tol = tol
         self.verbose = verbose
         self.patience = patience
         self.mini_batch = mini_batch
-        self.solver, self.is_stochastic = solver_selector(solver, learning_rate, self.loss_function)
+        self.solver = solver_factory(solver, learning_rate, self.loss_function, mini_batch)
         self.history = {
             'bias' : [],
             'loss' : [],
@@ -34,28 +34,24 @@ class Perceptron():
         for i in range(len(self.ws)):
             self.history[f'weights_{i}'] = []
                        
-        for _ in range(self.epochs):
-            batch_x = X
-            batch_y = y
-            if self.is_stochastic == True:
-                indexes = np.random.randint(0, high=X.shape[0], size=self.mini_batch)
-                batch_x = X[indexes, :]
-                batch_y = y[indexes,]
+        for epoch in range(self.epochs):
 
-            propagate = self.propagate(batch_x, self.ws, self.b)#(X * ws).sum(axis=1)+b
+            batch_X, batch_y = self.solver.define_batch(X, y)
+
+            propagate = self.propagate(batch_X, self.ws, self.b)#(X * ws).sum(axis=1)+b
             
             error = batch_y - propagate
             
             #self.ws = self.ws - mse.p_d_wrt_w(X, error, len(y)) * self.lr
             #gradient_w_dir = 
-            self.ws, self.b = self.solver.step(self.ws, self.b, error, batch_x)#.step(self.ws, self.loss_function.p_d_wrt_w(X, error, len(y)))
+            self.ws, self.b = self.solver.step(self.ws, self.b, error, batch_X, epoch)#.step(self.ws, self.loss_function.p_d_wrt_w(X, error, len(y)))
 
             #self.b = self.b - mse.p_d_wrt_b(error, len(y)) * self.lr 
             #gradient_b_dir = 
             #self.b = self.solver.step(self.b, self.loss_function.p_d_wrt_b(error, len(y)))
 
             #self.ws, self.b = self.step(self.ws, self.b, X, y)
-            loss = self.loss_function.calculate(y, self.propagate(X, self.ws, self.b))
+            loss = self.loss_function.loss(y, self.propagate(X, self.ws, self.b))
 
             [self.history[f'weights_{i}'].append(self.ws[i]) for i in range(len(self.ws))]
             self.history['bias'].append(self.b)
@@ -88,7 +84,7 @@ class Perceptron():
         return self.propagate(X, self.ws, self.b)
     
     def propagate(self, X, ws, b):
-        summation = (X * ws).sum(axis=1)+b
+        summation = (X.reshape(X.shape[0], -1) * ws).sum(axis=1)+b
         return self.activation(summation)
     
     def check_if_df(self, data):
