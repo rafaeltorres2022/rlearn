@@ -27,7 +27,7 @@ class GradientDescent(Solver):
         super().__init__(learning_rate, loss_function, mini_batch)
 
     def step(self, ws, b, error, X, epoch):
-        gradient = self.loss_function.gradient(X, error, len(X))
+        gradient = self.loss_function.gradient(X, error)
         new_ws = np.append(ws, b) - gradient * self.lr
         #new_b = b - self.loss_function.p_d_wrt_b(error, len(X)) * self.lr
         return new_ws[:-1], new_ws[-1]
@@ -41,7 +41,7 @@ class StochasticGradientDescent(Solver):
         super().__init__(learning_rate, loss_function, mini_batch)
 
     def step(self, ws, b, error, X, epoch):
-        gradient = gradient = self.loss_function.gradient(X, error, len(X))
+        gradient = gradient = self.loss_function.gradient(X, error)
         new_ws = np.append(ws, b) - gradient * self.lr
         return new_ws[:-1], new_ws[-1]
     
@@ -57,7 +57,7 @@ class Adam(Solver):
 
     def step(self, ws, b, error, X, epoch):
         epoch += 1
-        gradient = gradient = self.loss_function.gradient(X, error, len(X))
+        gradient = gradient = self.loss_function.gradient(X, error)
         self.mt = (self.beta1 * self.mt) + ((1 - self.beta1) * gradient)
         self.vt = self.beta2 * self.vt + (1 - self.beta2) * gradient**2
         m_hat = self.mt / (1 - self.beta1 ** epoch)
