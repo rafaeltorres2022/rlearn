@@ -1,35 +1,9 @@
 import numpy as np
 from rlearn.activation_functions import *
+from rlearn.solvers import Adam2d
 from numpy.lib.stride_tricks import sliding_window_view
 from time import time
 
-class Adam2d():
-
-    def __init__(self, layers_size, learning_rate=0.001, beta1 = 0.9, beta2 = 0.999, ep = 10e-8) -> None:
-        self.lr = learning_rate
-        self.beta1 = beta1
-        self.beta2 = beta2
-        self.ep = ep
-        self.mtw = [0 for _ in range(layers_size)]
-        self.mtb = [0 for _ in range(layers_size)]
-        self.vtw = [0 for _ in range(layers_size)]
-        self.vtb = [0 for _ in range(layers_size)]
-        self.epoch = 1
-
-    def step(self, old_w, old_b, gradients_w, gradients_b, layer):
-        self.mtw[layer] = (self.beta1 * self.mtw[layer]) + ((1 - self.beta1) * gradients_w)
-        self.mtb[layer] = (self.beta1 * self.mtb[layer]) + ((1 - self.beta1) * gradients_b)
-        self.vtw[layer] = self.beta2 * self.vtw[layer] + (1 - self.beta2) * gradients_w**2
-        self.vtb[layer] = self.beta2 * self.vtb[layer] + (1 - self.beta2) * gradients_b**2
-        m_hatw = self.mtw[layer] / (1 - self.beta1 ** self.epoch)
-        m_hatb = self.mtb[layer] / (1 - self.beta1 ** self.epoch)
-        v_hatw = self.vtw[layer] / (1 - self.beta2 ** self.epoch)
-        v_hatb = self.vtb[layer] / (1 - self.beta2 ** self.epoch)
-        self.epoch += 1
-        new_w = old_w - self.lr * m_hatw / (np.sqrt(v_hatw) + self.ep)
-        new_b = old_b - self.lr * m_hatb / (np.sqrt(v_hatb) + self.ep)
-        return new_w, new_b
-    
 class Layer:
 
     def __init__(self) -> None:
@@ -278,7 +252,7 @@ class NNModel:
 
 
             self.history['train_loss'].append(self.multilabel_log_loss(y_one_hot_encoded_all_set, result_all_set))
-            self.history['train_accuracy'].append(self.model_accuracy(y_train, self.predict(X_train)))
+            self.history['train_accuracy'].append(self.model_accuracy(y, self.predict(X)))
 
             if (X_test is not None):
                 y_one_hot_encoded_all_set_test = self.encode_y(y_test)

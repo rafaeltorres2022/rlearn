@@ -33,6 +33,9 @@ class Sigmoid:
     def activate(self, x):
         return expit(x)
 
+    def prime(self, x):
+        return expit(x)*(1-expit(x))
+    
 class Softmax:
 
     def activate(self, x):

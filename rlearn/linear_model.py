@@ -3,83 +3,76 @@ import pandas as pd
 from rlearn.activation_functions import activation_factory
 from rlearn.metrics import loss_factory
 from rlearn.solvers import solver_factory
-from sklearn.metrics import mean_squared_error
+from rlearn.regularization import Regularization
 
 class Perceptron():
-    def __init__(self, learning_rate = 0.0001, epochs = 1000, solver = 'sgd', 
-                activation='linear', loss_function = 'mse', mini_batch=100, tol=0.001, patience = 10,) -> None:
-        self.ws = []
+    def __init__(self, learning_rate = 0.001, solver = 'sgd', 
+                activation='linear', loss_function = 'mse', mini_batch=200) -> None:
+        self.ws = None
         self.b = 0
-        #self.lr = learning_rate
-        self.epochs = epochs
         self.activation = activation_factory(activation)
         self.loss_function = loss_factory(loss_function)
-        self.error = 0
-        self.tol = tol
-        self.patience = patience
         self.mini_batch = mini_batch
-        self.solver = solver_factory(solver, learning_rate, self.loss_function, mini_batch)
-        self.history = {
-            'bias' : [],
-            'loss' : [],
-        }
+        self.solver = solver_factory(solver, learning_rate, mini_batch)
+        self.history = []
 
-    def fit(self, X, y, save_weights_history = False):
-        X = self.check_if_df(X)
-        y = self.check_if_df(y, is_target=True)
+    def fit(self, X, y, epochs = 1000, verbose=5):
         self.initialize_wheights(X)
-        if save_weights_history == True:
-            for i in range(len(self.ws)):
-                self.history[f'weights_{i}'] = []
                        
-        for epoch in range(self.epochs):
+        for epoch in range(epochs):
 
             batch_X, batch_y = self.solver.define_batch(X, y)
 
-            propagate = self.propagate(batch_X, self.ws, self.b)#(X * ws).sum(axis=1)+b
-            error = batch_y - propagate
-            self.ws, self.b = self.solver.step(self.ws, self.b, error, batch_X, epoch)#.step(self.ws, self.loss_function.p_d_wrt_w(X, error, len(y)))
-            loss = self.loss_function.loss(y, self.propagate(X, self.ws, self.b))
+            propagate = self.propagate(batch_X)
+            grad_w, grad_b = self.loss_function.gradient(batch_X, batch_y - propagate)
+            self.ws, self.b = self.solver.step(self.ws, self.b, grad_w, grad_b)#.step(self.ws, self.loss_function.p_d_wrt_w(X, error, len(y)))
+            loss = self.loss_function.loss(y, self.propagate(X))
 
-            if save_weights_history == True:
-                [self.history[f'weights_{i}'].append(self.ws[i]) for i in range(len(self.ws))]
-                self.history['bias'].append(self.b)
-            self.history['loss'].append(loss)
+            self.history.append(loss)
 
 
         return self.ws, self.b
-    
-    def initialize_loss(self, X, y, ws, b, metric):
-        pred = self.propagate(X, ws, b)
-        return metric.calculate(y, pred)
 
     def initialize_wheights(self, X):
-        try:
-            self.ws = np.ones(X.shape[1])
-        except IndexError as e:
-            self.ws = np.ones(1)
+        self.ws = np.random.normal(0, 1, X.shape[1])
 
     def predict(self, X):
-        X = self.check_if_df(X)
-        pred = self.propagate(X, self.ws, self.b)
-        if self.activation.__name__ == 'sigmoid':
-            binarize = lambda x : 1 if (x > 0.5) else 0
-            binarize = np.vectorize(binarize)
-            return binarize(pred)
+        pred = self.propagate(X)
+        if self.activation.__class__.__name__ == 'Sigmoid':
+            return (pred > 0.5).astype('int8')
         return pred
     
-    def propagate(self, X, ws, b):
-        summation = (X * ws).sum(axis=1)+b
-        return self.activation(summation)
-    
-    def check_if_df(self, data, is_target=False):
-        if (type(data) is pd.DataFrame):
-            return data.to_numpy()
-        elif (type(data) is pd.Series) and (is_target == False):
-            return data.to_numpy().reshape(data.shape[0], -1)
-        elif (type(data) is pd.Series) and is_target:
-            return data.to_numpy()
-        elif (type(data) == np.ndarray) and (data.shape == (data.shape[0], ) and (is_target==False)):
-            return data.reshape(-1, 1)
-        else:
-            return data
+    def propagate(self, X):
+        summation = (X.dot(self.ws))+self.b
+        return self.activation.activate(summation)
+
+class ElasticNet:
+
+    def __init__(self, alpha = 0.1, l1_ratio = 0.5, learning_rate=0.1, solver='gd', loss='mse') -> None:
+        self.weights = None
+        self.bias = 0
+        self.regularization = Regularization(alpha=alpha, l1_ratio=l1_ratio)
+        self.hist = []
+        self.solver = solver_factory(solver, learning_rate, 200)
+        self.loss_function = loss_factory(loss)
+
+
+    def fit(self, X, y, epochs=10000, verbose=5):
+        self.weights = np.random.normal(0, 1, size=X.shape[1])
+
+        for epoch in range(epochs):
+            foward = X.dot(self.weights) + self.bias
+            grad_w, grad_b = self.loss_function.gradient(X, y-foward)
+            
+            loss = self.loss_function.loss(y, foward)
+            self.hist.append(loss)
+            
+            grad_w += self.regularization.derivative(self.weights)
+            self.weights, self.bias = self.solver.step(self.weights, self.bias, grad_w, grad_b)
+
+            if epoch % (epochs/verbose) == 0:
+                print(self.hist[-1])
+
+    def predict(self, X):
+        return X.dot(self.weights) + self.bias
+            

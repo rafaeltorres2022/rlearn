@@ -1,5 +1,7 @@
 **/datasets
 *_ignore.*
+*_impl.*
+*.pickle
 **/tests
 **/.vscode
 

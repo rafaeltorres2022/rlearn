@@ -3,80 +3,117 @@ import numpy as np
 
 class Solver:
 
-    def __init__(self, learning_rate, loss_function, mini_batch) -> None:
+    def __init__(self, learning_rate, mini_batch) -> None:
         self.lr = learning_rate
-        self.loss_function = loss_function
         self.mini_batch = mini_batch
     
-    def step(self, ws, b, error, X, epoch):
+    def step(self, ws, b, grad_w, grad_b):
         raise NotImplementedError()
 
     def define_batch(self, X, y):
         indexes = np.random.randint(0, high=X.shape[0], size=self.mini_batch)
-        try:
-            batch_x = X[indexes, :]
-            batch_y = y[indexes,]
-        except IndexError:
-            batch_x = X[indexes]
-            batch_y = y[indexes]
+        batch_x = X[indexes, :]
+        batch_y = y[indexes,]
         return batch_x, batch_y
     
 class GradientDescent(Solver):
 
-    def __init__(self, learning_rate, loss_function, mini_batch) -> None:
-        super().__init__(learning_rate, loss_function, mini_batch)
+    def __init__(self, learning_rate, mini_batch, decay=0) -> None:
+        super().__init__(learning_rate, mini_batch)
+        self.decay = decay
+        self.step_count = 1
 
-    def step(self, ws, b, error, X, epoch):
-        gradient = self.loss_function.gradient(X, error)
-        new_ws = np.append(ws, b) - gradient * self.lr
+    def step(self, ws, b, grad_w, grad_b):
+        #self.lr = self.lr * np.e**(-(self.step_count*self.decay))
+        self.step_count+=1
+        new_ws = ws - grad_w * self.lr
+        new_b = b - grad_b * self.lr
         #new_b = b - self.loss_function.p_d_wrt_b(error, len(X)) * self.lr
-        return new_ws[:-1], new_ws[-1]
+        return new_ws, new_b
 
     def define_batch(self, X, y):
         return X, y
     
 class StochasticGradientDescent(Solver):
 
-    def __init__(self, learning_rate, loss_function, mini_batch) -> None:
-        super().__init__(learning_rate, loss_function, mini_batch)
+    def __init__(self, learning_rate, mini_batch, decay=0) -> None:
+        super().__init__(learning_rate, mini_batch)
+        self.step_count = 1
+        self.decay = decay
 
-    def step(self, ws, b, error, X, epoch):
-        gradient = gradient = self.loss_function.gradient(X, error)
-        new_ws = np.append(ws, b) - gradient * self.lr
-        return new_ws[:-1], new_ws[-1]
+
+    def step(self, ws, b, grad_w, grad_b):
+        #self.lr = self.lr * np.e**(-(self.step_count*self.decay))
+        new_ws = ws - grad_w * self.lr
+        new_b = b - grad_b * self.lr
+        self.step_count+=1
+        #new_b = b - self.loss_function.p_d_wrt_b(error, len(X)) * self.lr
+        return new_ws, new_b
     
 class Adam(Solver):
 
-    def __init__(self, loss_function, mini_batch, learning_rate=0.001, beta1 = 0.9, beta2 = 0.999, ep = 10e-8) -> None:
-        super().__init__(learning_rate, loss_function, mini_batch)
+    def __init__(self, mini_batch, learning_rate=0.001, beta1 = 0.9, beta2 = 0.999, ep = 10e-8) -> None:
+        super().__init__(learning_rate, mini_batch)
         self.beta1 = beta1
         self.beta2 = beta2
         self.ep = ep
-        self.mt = 0
-        self.vt = 0
+        self.mtw = 0
+        self.mtb = 0
+        self.vtw = 0
+        self.vtb = 0
+        self.step_count = 1
 
-    def step(self, ws, b, error, X, epoch):
-        epoch += 1
-        gradient = gradient = self.loss_function.gradient(X, error)
-        self.mt = (self.beta1 * self.mt) + ((1 - self.beta1) * gradient)
-        self.vt = self.beta2 * self.vt + (1 - self.beta2) * gradient**2
-        m_hat = self.mt / (1 - self.beta1 ** epoch)
-        v_hat = self.vt / (1 - self.beta2 ** epoch)
-        new_ws = np.append(ws, b) - self.lr * m_hat / np.sqrt(v_hat) + self.ep
-        ws, b = new_ws[:-1], new_ws[-1]
-        return ws, b
+    def step(self, ws, b, grad_w, grad_b):
+        self.mtw = (self.beta1 * self.mtw) + ((1 - self.beta1) * grad_w)
+        self.mtb = (self.beta1 * self.mtb) + ((1 - self.beta1) * grad_b)
+        self.vtw = self.beta2 * self.vtw + (1 - self.beta2) * grad_w**2
+        self.vtb = self.beta2 * self.vtb + (1 - self.beta2) * grad_b**2
+        m_hatw = self.mtw / (1 - self.beta1 ** self.step_count)
+        m_hatb = self.mtb / (1 - self.beta1 ** self.step_count)
+        v_hatw = self.vtw / (1 - self.beta2 ** self.step_count)
+        v_hatb = self.vtb / (1 - self.beta2 ** self.step_count)
+        new_ws = ws - self.lr * m_hatw / np.sqrt(v_hatw) + self.ep
+        new_b = b - self.lr * m_hatb / np.sqrt(v_hatb) + self.ep
+        self.step_count+=1
+        return new_ws, new_b
 
-def solver_factory(function_name, learning_rate, loss_function, mini_batch):
+
+class Adam2d():
+
+    def __init__(self, layers_size, learning_rate=0.001, beta1 = 0.9, beta2 = 0.999, ep = 10e-8) -> None:
+        self.lr = learning_rate
+        self.beta1 = beta1
+        self.beta2 = beta2
+        self.ep = ep
+        self.mtw = [0 for _ in range(layers_size)]
+        self.mtb = [0 for _ in range(layers_size)]
+        self.vtw = [0 for _ in range(layers_size)]
+        self.vtb = [0 for _ in range(layers_size)]
+        self.epoch = 1
+
+    def step(self, old_w, old_b, gradients_w, gradients_b, layer):
+        self.mtw[layer] = (self.beta1 * self.mtw[layer]) + ((1 - self.beta1) * gradients_w)
+        self.mtb[layer] = (self.beta1 * self.mtb[layer]) + ((1 - self.beta1) * gradients_b)
+        self.vtw[layer] = self.beta2 * self.vtw[layer] + (1 - self.beta2) * gradients_w**2
+        self.vtb[layer] = self.beta2 * self.vtb[layer] + (1 - self.beta2) * gradients_b**2
+        m_hatw = self.mtw[layer] / (1 - self.beta1 ** self.epoch)
+        m_hatb = self.mtb[layer] / (1 - self.beta1 ** self.epoch)
+        v_hatw = self.vtw[layer] / (1 - self.beta2 ** self.epoch)
+        v_hatb = self.vtb[layer] / (1 - self.beta2 ** self.epoch)
+        self.epoch += 1
+        new_w = old_w - self.lr * m_hatw / (np.sqrt(v_hatw) + self.ep)
+        new_b = old_b - self.lr * m_hatb / (np.sqrt(v_hatb) + self.ep)
+        return new_w, new_b
+    
+
+def solver_factory(function_name, learning_rate, mini_batch):
     if function_name == 'gd': return GradientDescent(
         learning_rate=learning_rate,
-        loss_function=loss_function,
         mini_batch=mini_batch)
     elif function_name == 'sgd': return StochasticGradientDescent(
         learning_rate=learning_rate,
-        loss_function=loss_function,
         mini_batch=mini_batch)
     elif function_name == 'adam': return Adam(
         learning_rate=learning_rate,
-        loss_function=loss_function,
         mini_batch=mini_batch)
     else: raise ValueError(f'{function_name} is not a valid function.')
