@@ -2,6 +2,7 @@
 *_ignore.*
 *_impl.*
 *.pickle
+*.png
 **/tests
 **/.vscode
 

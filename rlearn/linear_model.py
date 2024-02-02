@@ -70,8 +70,9 @@ class ElasticNet:
             grad_w += self.regularization.derivative(self.weights)
             self.weights, self.bias = self.solver.step(self.weights, self.bias, grad_w, grad_b)
 
-            if epoch % (epochs/verbose) == 0:
-                print(self.hist[-1])
+            if verbose > 0:
+                if (epoch % (epochs/verbose) == 0):
+                    print(self.hist[-1])
 
     def predict(self, X):
         return X.dot(self.weights) + self.bias

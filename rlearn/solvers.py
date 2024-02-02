@@ -36,18 +36,17 @@ class GradientDescent(Solver):
     
 class StochasticGradientDescent(Solver):
 
-    def __init__(self, learning_rate, mini_batch, decay=0) -> None:
+    def __init__(self, learning_rate, mini_batch, momentum=0.99) -> None:
         super().__init__(learning_rate, mini_batch)
-        self.step_count = 1
-        self.decay = decay
-
+        self.momentum = momentum
+        self.vtw = 0
+        self.vtb = 0
 
     def step(self, ws, b, grad_w, grad_b):
-        #self.lr = self.lr * np.e**(-(self.step_count*self.decay))
-        new_ws = ws - grad_w * self.lr
-        new_b = b - grad_b * self.lr
-        self.step_count+=1
-        #new_b = b - self.loss_function.p_d_wrt_b(error, len(X)) * self.lr
+        self.vtw = self.momentum * self.vtw + self.lr * grad_w
+        self.vtb = self.momentum * self.vtb + self.lr * grad_b
+        new_ws = ws - self.vtw
+        new_b = b - self.vtb
         return new_ws, new_b
     
 class Adam(Solver):
