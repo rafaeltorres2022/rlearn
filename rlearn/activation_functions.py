@@ -40,6 +40,11 @@ class Softmax:
 
     def activate(self, x):
         return soft(x, axis=1)
+    
+class Step():
+
+    def activate(self, x):
+        return np.where(x>0, 1, 0)
 
 def activation_factory(function_name):
     if function_name == 'relu': return Relu()
@@ -47,4 +52,5 @@ def activation_factory(function_name):
     elif function_name == 'linear': return Linear()
     elif function_name == 'sigmoid': return Sigmoid()
     elif function_name == 'softmax': return Softmax()
+    elif function_name == 'step': return Step()
     else: raise ValueError(f'{function_name} is not a valid function.')

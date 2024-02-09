@@ -16,6 +16,17 @@ class Solver:
         batch_y = y[indexes,]
         return batch_x, batch_y
     
+class PerceptronSolver(Solver):
+
+    def __init__(self, learning_rate, mini_batch) -> None:
+        super().__init__(learning_rate, mini_batch)
+
+    def define_batch(self, X, y):
+        return X, y
+    
+    def step(self, ws, b, grad_w, grad_b):
+        return ws + grad_w, b + grad_b
+
 class GradientDescent(Solver):
 
     def __init__(self, learning_rate, mini_batch, decay=0) -> None:
@@ -113,6 +124,9 @@ def solver_factory(function_name, learning_rate, mini_batch):
         learning_rate=learning_rate,
         mini_batch=mini_batch)
     elif function_name == 'adam': return Adam(
+        learning_rate=learning_rate,
+        mini_batch=mini_batch)
+    elif function_name == 'perceptron': return PerceptronSolver(
         learning_rate=learning_rate,
         mini_batch=mini_batch)
     else: raise ValueError(f'{function_name} is not a valid function.')

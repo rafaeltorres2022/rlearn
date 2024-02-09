@@ -21,7 +21,16 @@ class LogLoss:
     def loss(self, y, pred, ep = 10e-8):
         return np.average(-(y * np.log(pred + ep) + (1 - y) * np.log(1 - pred + ep)))
     
+class PerceptronLoss:
+
+    def gradient(self, X, error):
+        return error.dot(X), error.sum()
+
+    def loss(self, y, pred):
+        return (y-pred).sum()
+
 def loss_factory(function_name):
     if function_name == 'mse': return MeanSquaredError()
     elif function_name == 'logloss': return LogLoss()
+    elif function_name == 'perceptron': return PerceptronLoss()
     else: raise ValueError(f'{function_name} is not a valid function.')

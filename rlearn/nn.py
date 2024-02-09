@@ -3,6 +3,7 @@ from rlearn.activation_functions import *
 from rlearn.solvers import Adam2d
 from numpy.lib.stride_tricks import sliding_window_view
 from time import time
+from rlearn.utils import backpooling
 
 class Layer:
 
@@ -170,32 +171,39 @@ class MaxPooling(Layer):
     
     
     def backward(self, prev_layer_error, weights_prev_layer, solver, layer):
-        #start = time()
-        patches = sliding_window_view(self.layer_input, window_shape=(self.size,self.size,), axis=(1,2,))[:, 0::self.stride, 0::self.stride]
+        patches_og = sliding_window_view(self.layer_input, window_shape=(self.size,self.size,), axis=(1,2,))[:, 0::self.stride, 0::self.stride]
         #self.test_stuff.app#end(prev_layer_error)
         # self.test_stuff.app#end(patches)
-        temp_patches = np.copy(patches)
-        for item in range(temp_patches.shape[0]):
-                for row in range(temp_patches.shape[1]):
-                        for col in range(temp_patches.shape[2]):
-                                for channel in range(temp_patches.shape[3]):
-                                        temp = temp_patches[item][row][col][channel]
-                                        value = np.amax(temp, axis=(-2,-1))
-                                        #index = np.unravel_index(index, temp_patches[:][0][0][row][0].shape)
-                                        # print(temp)
-                                        # print(temp.shape)
-                                        # print(value)
-                                        index = np.argwhere(temp == value)[0]
-                                        # print(index)
-                                        # print(temp[tuple(index)])
-                                        temp[:] = 0
-                                        temp[tuple(index)] = 1
-                                        # print(temp)
-        #self.test_stuff.app#end(temp_patches)
-        test_einsum = np.einsum('nijc, nijcxy -> nijcxy', prev_layer_error, temp_patches)
+        start = time()
+        #self.test_stuff.append((self.layer_input, patches, prev_layer_error))
+        patches = patches_og.copy()
+        patches = backpooling(patches)
+        # # patches = np.copy(patches_og)
+        # # for item in range(patches.shape[0]):
+        # #         for row in range(patches.shape[1]):
+        # #                 for col in range(patches.shape[2]):
+        # #                         for channel in range(patches.shape[3]):
+        # #                                 temp = patches[item][row][col][channel]
+        # #                                 value = np.amax(temp, axis=(-2,-1))
+        # #                                 #index = np.unravel_index(index, patches[:][0][0][row][0].shape)
+        # #                                 # print(temp)
+        # #                                 # print(temp.shape)
+        # #                                 # print(value)
+        # #                                 index = np.argwhere(temp == value)[0]
+        # #                                 # print(index)
+        # #                                 # print(temp[tuple(index)])
+        # #                                 temp[:] = 0
+        # #                                 temp[tuple(index)] = 1
+        # #                                 # print(temp)
+        end = time()
+        #self.performance['Backward Pooling Loop'].append(end-start)
+        #print(f'Backward Pooling Loop: {end-start}')
+        start = time()
+        test_einsum = np.einsum('nijc, nijcxy -> nijcxy', prev_layer_error, patches, optimize='optimal')
         test_einsum = test_einsum.reshape(-1, *self.input_dim[1:])
-        #end = time()
-        #print(f'Backward Pooling: {#end-#start}')
+        end = time()
+        #self.performance['Backward Pooling Einsum'].append(end-start)
+        #print(f'Backward Pooling Einsum: {end-start}')
         return test_einsum
     
 class NNModel:
