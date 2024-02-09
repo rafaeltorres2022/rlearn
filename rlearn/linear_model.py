@@ -77,3 +77,26 @@ class ElasticNet:
     def predict(self, X):
         return X.dot(self.weights) + self.bias
             
+
+class OLS():
+
+    def __init__(self, include_bias = True) -> None:
+        self.weights = None
+        self.include_bias = include_bias
+
+    def estimate_weights(self, X, y):
+        self.weights = np.linalg.inv(X.T.dot(X)).dot(X.T).dot(y)
+
+    def fit(self, X, y):
+        if self.include_bias:
+            x_copy = np.c_[X, np.ones(X.shape[0])]
+            self.estimate_weights(x_copy, y)
+        else:
+            self.estimate_weights(X, y)        
+
+        return self.weights
+    
+    def predict(self, X):
+        if self.include_bias:
+            return np.c_[X, np.ones(X.shape[0])].dot(self.weights)
+        return X.dot(self.weights)
