@@ -28,9 +28,15 @@ class PerceptronLoss:
 
     def loss(self, y, pred):
         return (y-pred).sum()
+    
+class MulticlassLogLoss:
+    
+    def loss(self, y_true, y_pred):
+        return -np.average(y_true * np.log(y_pred + 1e-8))
 
 def loss_factory(function_name):
     if function_name == 'mse': return MeanSquaredError()
     elif function_name == 'logloss': return LogLoss()
     elif function_name == 'perceptron': return PerceptronLoss()
+    elif function_name == 'multiclasslogloss': return MulticlassLogLoss()
     else: raise ValueError(f'{function_name} is not a valid function.')

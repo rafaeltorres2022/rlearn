@@ -1,9 +1,10 @@
 import numpy as np
 from rlearn.activation_functions import *
 from rlearn.solvers import Adam2d
+from rlearn.utils import backpooling
+from rlearn.metrics import loss_factory
 from numpy.lib.stride_tricks import sliding_window_view
 from time import time
-from rlearn.utils import backpooling
 
 class Layer:
 
@@ -105,7 +106,6 @@ class FC(Layer):
         self.bias = None
         self.last_z = None
         self.last_out = None
-        self.last_input = None
         self.is_output_layer = is_output_layer
 
     def set_input_dim(self, input_dim : tuple):
@@ -117,7 +117,7 @@ class FC(Layer):
         self.bias = np.zeros(self.n_neurons)
 
     def foward(self, input):
-        self.last_input = input
+        self.layer_input = input
         z = input.dot(self.weights) + self.bias
         self.last_z = z
         out = self.activation.activate(z)
@@ -127,10 +127,10 @@ class FC(Layer):
     def backward(self, prev_layer_error, weights_prev_layer, solver, layer):
         if self.is_output_layer == True:
             layer_erro = prev_layer_error
-            gradient_w = self.last_input.T.dot(prev_layer_error)
+            gradient_w = self.layer_input.T.dot(prev_layer_error)
         else:
             layer_erro = prev_layer_error.dot(weights_prev_layer.T) * self.activation.prime(self.last_z)
-            gradient_w = self.last_input.T.dot(layer_erro)
+            gradient_w = self.layer_input.T.dot(layer_erro)
         gradient_b = layer_erro.sum(axis=0)
         self.weights, self.bias = solver.step(self.weights, self.bias, gradient_w, gradient_b, layer)
         return layer_erro
@@ -208,12 +208,14 @@ class MaxPooling(Layer):
     
 class NNModel:
 
-    def __init__(self, input_dim : tuple, layers = [], learning_rate=0.001) -> None:
+    def __init__(self, input_dim : tuple, layers = [], learning_rate=0.001, loss='multiclasslogloss') -> None:
         self.layers = layers
         self.in_out_dimensions = self.define_output_dim(input_dim)
         self.output_classes = None
         self.solver = Adam2d(len(self.layers), learning_rate=learning_rate)
         self.layers[-1].is_output_layer = True
+        self.loss_name = loss
+        self.loss_function = loss_factory(loss)
         self.history = {'train_loss' : [], 'train_accuracy' : [], 'test_loss' : [], 'test_accuracy' : []}
 
     def define_output_dim(self, input_dim):
@@ -242,59 +244,78 @@ class NNModel:
             if layer.__class__ == MaxPooling: continue
             prev_layer_weights = layer.weights
 
-    def fit(self, X, y, X_test = None, y_test = None, epochs=1000, batch_size=200, verbose=1, error_threshold = 0.001, acc_threshold = 0.9):
-        self.output_classes = np.unique(y)
+    def fit(self, X, y, X_test = None, y_test = None, epochs=5, batch_size=200, verbose=1, error_threshold = 0.001):
+        if self.loss_name == 'multiclasslogloss':
+            self.output_classes = np.unique(y)
+
         for epoch in range(1, epochs+1):
             #batch_X, batch_y = self.define_batch(X, y, batch_size=np.minimum(len(X), batch_size))
             for batch_index in range(0, len(X), batch_size):
                 #print(f'Batch {batch_index}')
                 batch_X = X[batch_index:batch_index+batch_size]
                 batch_y = y[batch_index:batch_index+batch_size]
-                y_one_hot_encoded = self.encode_y(batch_y)
                 result = self.foward(batch_X)
-                error = result - y_one_hot_encoded
+                if self.loss_name == 'multiclasslogloss':
+                    batch_y_encoded = self.encode_y(batch_y)
+                    error = result - batch_y_encoded
+                if self.loss_name == 'mse':
+                    error = 1/len(batch_X) * (result - batch_y[:,np.newaxis])
+                    #error, _ = self.loss_function.gradient(batch_X, batch_y[:,np.newaxis] - result)
                 self.backward(error)
 
-            y_one_hot_encoded_all_set = self.encode_y(y)
-            result_all_set = self.foward(X)
-
-
-            self.history['train_loss'].append(self.multilabel_log_loss(y_one_hot_encoded_all_set, result_all_set))
-            self.history['train_accuracy'].append(self.model_accuracy(y, self.predict(X)))
-
-            if (X_test is not None):
-                y_one_hot_encoded_all_set_test = self.encode_y(y_test)
-                result_all_set_test = self.foward(X_test)
-                self.history['test_loss'].append(self.multilabel_log_loss(y_one_hot_encoded_all_set_test, result_all_set_test))
-                self.history['test_accuracy'].append(self.model_accuracy(y_test, self.predict(X_test)))
+            if self.loss_name == 'multiclasslogloss':
+                self.add_classification_to_history(result, batch_y, X_test, y_test)
+            if self.loss_name == 'mse':
+                self.add_regression_to_history(result, batch_y[:,np.newaxis], X_test, y_test[:,np.newaxis])
+            
             if (epoch % verbose == 0) or (epoch == 1):
-                print(f'Epoch {epoch}: Training Loss {"%.2f" % self.history["train_loss"][-1]}\tTraining Accuracy {"%.2f" % self.history["train_accuracy"][-1]}\tTest Loss {"%.2f" % self.history["test_loss"][-1]}\tTest Accuracy {"%.2f" % self.history["test_accuracy"][-1]}')
+                self.log_training(epoch)
             if (self.history['test_loss'][-1] < error_threshold): 
-                print(f'Epoch {epoch}: Training Loss {"%.2f" % self.history["train_loss"][-1]}\tTraining Accuracy {"%.2f" % self.history["train_accuracy"][-1]}\tTest Loss {"%.2f" % self.history["test_loss"][-1]}\tTest Accuracy {"%.2f" % self.history["test_accuracy"][-1]}')
+                self.log_training(epoch)
                 break
-            if (self.history['test_accuracy'][-1] > acc_threshold): 
-                print(f'Epoch {epoch}: Training Loss {"%.2f" % self.history["train_loss"][-1]}\tTraining Accuracy {"%.2f" % self.history["train_accuracy"][-1]}\tTest Loss {"%.2f" % self.history["test_loss"][-1]}\tTest Accuracy {"%.2f" % self.history["test_accuracy"][-1]}')
-                break
+        
+        self.clear_cache()
 
+    def log_training(self, epoch):
+        if len(self.history['train_accuracy']) > 0:
+            print(f'Epoch {epoch}: Training Loss {"%.2f" % self.history["train_loss"][-1]}\tTraining Accuracy {"%.2f" % self.history["train_accuracy"][-1]}\tTest Loss {"%.2f" % self.history["test_loss"][-1]}\tTest Accuracy {"%.2f" % self.history["test_accuracy"][-1]}')
+        else:
+            print(f'Epoch {epoch}: Training Loss {"%.2f" % self.history["train_loss"][-1]}\tTest Loss {"%.2f" % self.history["test_loss"][-1]}')
+    
+    def add_regression_to_history(self, iteration_result, y_true, X_test, y_test):
+        self.history['train_loss'].append(self.loss_function.loss(y_true, iteration_result))
+        if (X_test is not None):
+            self.history['test_loss'].append(self.loss_function.loss(y_test, self.foward(X_test)))
+
+    def add_classification_to_history(self, iteration_result, y_true, X_test, y_test):
+        #result_all_set = self.foward(X)
+        self.history['train_loss'].append(self.loss_function.loss(self.encode_y(y_true), iteration_result))
+        self.history['train_accuracy'].append(self.model_accuracy(y_true, self.probabilities_to_classes(iteration_result)))
+        if (X_test is not None):
+            y_one_hot_encoded_all_set_test = self.encode_y(y_test)
+            result_all_set_test = self.foward(X_test)
+            self.history['test_loss'].append(self.loss_function.loss(y_one_hot_encoded_all_set_test, result_all_set_test))
+            self.history['test_accuracy'].append(self.model_accuracy(y_test, self.probabilities_to_classes(result_all_set_test)))
+
+    def clear_cache(self):
         for l in self.layers:
             l.layer_input = None
-
 
     def predict(self, X, get_probabilities=False):
         result = self.foward(X)
         if get_probabilities: return result
-        result = np.argmax(result, axis=1, keepdims=True)
-        result = [self.output_classes[i][0] for i in result]
-        return result
+        
+        return self.probabilities_to_classes(result)
+    
+    def probabilities_to_classes(self, probabilities):
+        indexes = np.argmax(probabilities, axis=1, keepdims=True)
+        return [self.output_classes[i][0] for i in indexes]
     
     def encode_y(self, y):
         return np.eye(np.max(y)+1)[y]
     
     def model_accuracy(self, y_true, pred):
         return (y_true == pred).sum() / len(y_true)
-
-    def multilabel_log_loss(self, y_true, y_pred):
-        return -np.average(y_true * np.log(y_pred + 1e-8))
     
     def define_batch(self, X, y, batch_size):
         indexes = np.random.randint(0, high=X.shape[0], size=batch_size)
