@@ -13,11 +13,14 @@ class Perceptron():
         self.activation = activation_factory(activation)
         self.loss_function = loss_factory(loss_function)
         self.mini_batch = mini_batch
-        self.solver = solver_factory(solver, learning_rate, mini_batch)
+        if isinstance(solver, str): 
+            self.solver = solver_factory(solver, learning_rate, mini_batch)
+        else:
+            self.solver = solver
         self.history = []
 
     def fit(self, X, y, epochs = 1000, verbose=5):
-        self.initialize_wheights(X)
+        self.initialize_weights(X)
                        
         for epoch in range(epochs):
 
@@ -33,7 +36,7 @@ class Perceptron():
 
         return self.ws, self.b
 
-    def initialize_wheights(self, X):
+    def initialize_weights(self, X):
         self.ws = np.random.normal(0, 1, X.shape[1])
 
     def predict(self, X):

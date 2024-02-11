@@ -18,7 +18,7 @@ class Solver:
     
 class PerceptronSolver(Solver):
 
-    def __init__(self, learning_rate, mini_batch) -> None:
+    def __init__(self, learning_rate=1, mini_batch=200) -> None:
         super().__init__(learning_rate, mini_batch)
 
     def define_batch(self, X, y):
@@ -47,7 +47,7 @@ class GradientDescent(Solver):
     
 class StochasticGradientDescent(Solver):
 
-    def __init__(self, learning_rate, mini_batch, momentum=0.99) -> None:
+    def __init__(self, learning_rate=0.001, mini_batch=200, momentum=0.99) -> None:
         super().__init__(learning_rate, mini_batch)
         self.momentum = momentum
         self.vtw = 0

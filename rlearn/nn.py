@@ -20,7 +20,7 @@ class Layer:
         self.layer_error = error
 
 class Conv3C(Layer):
-    def __init__(self, kernel_size = 3, n_chanels_kernel = 3, out_channels = 3, stride = 1, activation=LeakyRelu()) -> None:
+    def __init__(self, kernel_size = 3, n_chanels_kernel = 3, out_channels = 3, stride = 1, activation=LeakyRelu(), regularization=None) -> None:
         self.kernel_size = kernel_size
         self.stride = stride
         self.out_channels = out_channels
@@ -29,7 +29,7 @@ class Conv3C(Layer):
             )
         self.biases = np.zeros(out_channels)
         self.activation = activation
-        #self.cache = None
+        self.regularization = regularization
 
 
     # def convolve(self, image, kernel, w_shape, h_shape):
@@ -87,6 +87,8 @@ class Conv3C(Layer):
         # print(back_conv_w.shape)
         # print(back_bs.shape)
         # print(back_conv_w.shape)
+        if self.regularization:
+            back_conv_w += self.regularization.derivative(self.weights)
         self.weights, self.biases = solver.step(self.weights, self.biases, back_conv_w, back_bs, layer)
         #start = time()
         test = np.zeros(shape=self.layer_input.shape)
@@ -99,7 +101,7 @@ class Conv3C(Layer):
         return test
     
 class FC(Layer):
-    def __init__(self, n_neurons, activation=LeakyRelu(), is_output_layer = False) -> None:
+    def __init__(self, n_neurons, activation=LeakyRelu(), is_output_layer = False, regularization = None) -> None:
         self.activation = activation
         self.n_neurons = n_neurons
         self.weights = None
@@ -107,6 +109,7 @@ class FC(Layer):
         self.last_z = None
         self.last_out = None
         self.is_output_layer = is_output_layer
+        self.regularization = regularization
 
     def set_input_dim(self, input_dim : tuple):
         self.input_dim = input_dim
@@ -132,6 +135,8 @@ class FC(Layer):
             layer_erro = prev_layer_error.dot(weights_prev_layer.T) * self.activation.prime(self.last_z)
             gradient_w = self.layer_input.T.dot(layer_erro)
         gradient_b = layer_erro.sum(axis=0)
+        if self.regularization:
+            gradient_w += self.regularization.derivative(self.weights)
         self.weights, self.bias = solver.step(self.weights, self.bias, gradient_w, gradient_b, layer)
         return layer_erro
     

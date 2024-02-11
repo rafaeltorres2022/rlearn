@@ -3,8 +3,10 @@
 *_impl.*
 *.pickle
 *.png
+readme-test*
 **/tests
 **/.vscode
+rlearn-env
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
