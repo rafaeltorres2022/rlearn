@@ -210,10 +210,7 @@ X_train = X_train.reshape(*X_train.shape, 1)
 X_test = X_test.reshape(*X_test.shape, 1)
 X_train = X_train / 255
 X_test = X_test / 255
-```
-
-    WARNING:tensorflow:From C:\Users\Rafael\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.10_qbz5n2kfra8p0\LocalCache\local-packages\Python310\site-packages\keras\src\losses.py:2976: The name tf.losses.sparse_softmax_cross_entropy is deprecated. Please use tf.compat.v1.losses.sparse_softmax_cross_entropy instead.
-    
+```   
     
 
 #### Multilayer Perceptron
