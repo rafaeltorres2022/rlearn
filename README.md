@@ -9,7 +9,7 @@ Learning machine learning algorithms.
     a. [Regression](#regression-with-neural-network)  
     b. [Multiclass Classification](#multiclass-classification)  
 
-## [Linear Models](rlearn\linear_model.py)
+## [Linear Models](rlearn/linear_model.py)
 
 
 ```python
