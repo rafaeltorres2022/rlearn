@@ -7,12 +7,14 @@ from rlearn.regularization import Regularization
 
 class Perceptron():
     def __init__(self, learning_rate = 0.001, solver = 'sgd', 
-                activation='linear', loss_function = 'mse', mini_batch=200) -> None:
+                activation='linear', loss_function = 'mse', alpha = 0, l1_ratio = 0,
+                mini_batch=200) -> None:
         self.ws = None
         self.b = 0
         self.activation = activation_factory(activation)
         self.loss_function = loss_factory(loss_function)
         self.mini_batch = mini_batch
+        self.regularization = Regularization(alpha=alpha, l1_ratio=l1_ratio)
         if isinstance(solver, str): 
             self.solver = solver_factory(solver, learning_rate, mini_batch)
         else:
@@ -28,6 +30,7 @@ class Perceptron():
 
             propagate = self.propagate(batch_X)
             grad_w, grad_b = self.loss_function.gradient(batch_X, batch_y - propagate)
+            grad_w += self.regularization.derivative(self.ws)
             self.ws, self.b = self.solver.step(self.ws, self.b, grad_w, grad_b)#.step(self.ws, self.loss_function.p_d_wrt_w(X, error, len(y)))
             loss = self.loss_function.loss(y, self.propagate(X))
 
