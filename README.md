@@ -15,9 +15,14 @@ Learning machine learning algorithms.
         - [Multilayer Perceptron](#multilayer-perceptron)
     - [Multiclass Classification](#multiclass-classification)  
         - [Multilayer Perceptron](#multilayer-perceptron-classification)
-        - [Convolutional Neural Network](#convolutional-neural-network)
+        - [Convolutional Neural Network](#convolutional-neural-network)  
+- [Trees](#trees)
+    - [Regression](#regression-with-trees)  
+        - [Decision Tree](#decision-tree-regressor)  
+    - [Classification](#classification-with-trees)  
+        - [Classification Tree](#decision-tree-classifier)
 
-## [Linear Models](rlearn/linear_model.py)
+## [Linear Models](rlearn\linear_model.py)
 
 
 ```python
@@ -183,8 +188,7 @@ X_train = X_train.reshape(*X_train.shape, 1)
 X_test = X_test.reshape(*X_test.shape, 1)
 X_train = X_train / 255
 X_test = X_test / 255
-```   
-    
+```
 
 #### Multilayer Perceptron Classification
 
@@ -268,5 +272,104 @@ print(classification_report(y_test, convnn_regularization.predict(X_test)))
     weighted avg       0.87      0.87      0.87     10000
     
     
+
+## [Trees](rlearn/tree.py)  
+<sub>[Back to top.](#table-of-contents)</sub>
+
+### Regression with Trees
+
+Dataset used for Regression. My implementation of Decision Trees requieres DataFrame as input.
+
+
+```python
+from rlearn.tree_utils import plot_tree
+
+data = load_diabetes(as_frame=True)['frame']
+split_delimiter = int(len(data)*0.7)
+X_train = data[:split_delimiter]
+X_test = data[split_delimiter:]
+target_col = 'target'
+```
+
+#### Decision Tree Regressor
+
+
+```python
+
+from rlearn.tree import DecisionTreeRegressor
+dtr = DecisionTreeRegressor(max_depth=4, min_samples_split=20)
+dtr.fit(X_train, target_col)
+
+print('Mean Squared Error:',mean_squared_error(X_test[target_col], dtr.predict(X_test)))
+```
+
+    Mean Squared Error: 4193.494500508087
+    
+
+
+```python
+plot_tree(dtr)
+```
+
+
+
+
+    
+![svg](README_files/README_37_0.svg)
+    
+
+
+
+### Classification with Trees
+
+Dataset used for classification with Trees.
+
+
+```python
+from sklearn.datasets import load_wine
+
+data = load_wine(as_frame=True)['frame'].sample(frac=1)
+split_delimiter = int(len(data)*0.7)
+X_train = data[:split_delimiter]
+X_test = data[split_delimiter:]
+target_col = 'target'
+```
+
+#### Decision Tree Classifier
+
+
+```python
+from rlearn.tree import DecisionTreeClassifier
+dtc = DecisionTreeClassifier(max_depth=4, min_samples_split=20)
+dtc.fit(X_train, target_col)
+
+print(classification_report(X_test[target_col], dtc.predict(X_test)))
+```
+
+                  precision    recall  f1-score   support
+    
+               0       0.88      1.00      0.94        23
+               1       0.90      0.86      0.88        21
+               2       0.88      0.70      0.78        10
+    
+        accuracy                           0.89        54
+       macro avg       0.89      0.85      0.86        54
+    weighted avg       0.89      0.89      0.89        54
+    
+    
+
+
+```python
+plot_tree(dtc)
+```
+
+
+
+
+    
+![svg](README_files/README_43_0.svg)
+    
+
+
 
 <sub>[Back to top.](#table-of-contents)</sub>
