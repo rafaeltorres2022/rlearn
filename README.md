@@ -19,8 +19,10 @@ Learning machine learning algorithms.
 - [Trees](#trees)
     - [Regression](#regression-with-trees)  
         - [Decision Tree](#decision-tree-regressor)  
+        - [Random Forest](#random-forest-regressor)  
     - [Classification](#classification-with-trees)  
-        - [Classification Tree](#decision-tree-classifier)
+        - [Decision Tree](#decision-tree-classifier)
+        - [Random Forest](#random-forest-classifier)
 
 ## [Linear Models](rlearn\linear_model.py)
 
@@ -295,7 +297,6 @@ target_col = 'target'
 
 
 ```python
-
 from rlearn.tree import DecisionTreeRegressor
 dtr = DecisionTreeRegressor(max_depth=4, min_samples_split=20)
 dtr.fit(X_train, target_col)
@@ -319,6 +320,27 @@ plot_tree(dtr)
     
 
 
+
+#### Random Forest Regressor
+
+
+```python
+from rlearn.tree import RandomForestRegressor
+
+forest = RandomForestRegressor(n_estimators=50)
+forest.fit(X_train, target_col, X_test, verbose=10)
+
+print('Mean Squared Error:',mean_squared_error(X_test[target_col], forest.predict(X_test)))
+```
+
+    Train Loss: 5174.557751644285	Test Loss: 5320.667066782897
+    Train Loss: 3157.2843122491886	Test Loss: 3408.2080264220394
+    Train Loss: 3107.0084756732667	Test Loss: 3283.2990424165528
+    Train Loss: 3036.1481976213286	Test Loss: 3280.38539982366
+    Train Loss: 3018.4580685421315	Test Loss: 3257.068817638672
+    Train Loss: 3023.170500295181	Test Loss: 3202.1667270629787
+    Mean Squared Error: 3202.1667270629787
+    
 
 ### Classification with Trees
 
@@ -367,9 +389,39 @@ plot_tree(dtc)
 
 
     
-![svg](README_files/README_43_0.svg)
+![svg](README_files/README_45_0.svg)
     
 
 
+
+#### Random Forest Classifier
+
+
+```python
+from rlearn.tree import RandomForestClassifier
+
+forest = RandomForestClassifier(n_estimators=50)
+forest.fit(X_train, target_col, X_test, verbose=10)
+
+print(classification_report(X_test[target_col], forest.predict(X_test)))
+```
+
+    Train Loss: 0.7983870967741935	Test Loss: 0.7592592592592593
+    Train Loss: 0.967741935483871	Test Loss: 0.9444444444444444
+    Train Loss: 0.9758064516129032	Test Loss: 0.9259259259259259
+    Train Loss: 0.9838709677419355	Test Loss: 0.9074074074074074
+    Train Loss: 0.9838709677419355	Test Loss: 0.9259259259259259
+    Train Loss: 0.9919354838709677	Test Loss: 0.9259259259259259
+                  precision    recall  f1-score   support
+    
+               0       0.83      0.94      0.88        16
+               1       0.95      0.86      0.90        22
+               2       1.00      1.00      1.00        16
+    
+        accuracy                           0.93        54
+       macro avg       0.93      0.93      0.93        54
+    weighted avg       0.93      0.93      0.93        54
+    
+    
 
 <sub>[Back to top.](#table-of-contents)</sub>
