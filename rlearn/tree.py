@@ -63,7 +63,9 @@ class DecisionTreeClassifier:
         self.min_samples_split = min_samples_split
         self.is_classifier = True
 
-    def fit(self, data : pd.DataFrame, target_col : str):
+    def fit(self, X_train : pd.DataFrame, y_train : pd.Series):
+        data = pd.concat([X_train, y_train], axis=1)
+        target_col = y_train.name
         self.root.set_split_info(*find_best_split(data, target_col, self.is_classifier))
         self.root.set_data(data)
         self.root.is_classification = self.is_classifier
@@ -138,29 +140,29 @@ class RandomForestRegressor:
         self.estimator = DecisionTreeRegressor
         self.mse = MeanSquaredError()
 
-    def fit(self, X_train, target_col, X_test, verbose=5):
-        self.target_col = target_col
-        feature_index = [_ for _ in range(len(X_train.drop(target_col, axis=1).columns))]
+    def fit(self, X_train, y_train, X_test, y_test, verbose=5):
+        self.target_col = y_train.name
+        feature_index = [_ for _ in range(len(X_train.columns))]
 
         for count in range(self.n_estimators):
-            bootstrap = X_train.sample(self.bootstrap_size, replace=True)
-            labels = bootstrap[target_col]
-            bootstrap = bootstrap.drop(target_col, axis=1).iloc[:, sample(feature_index, self.n_of_features)]
+            bootstrap = X_train.sample(self.bootstrap_size, replace=True).loc[:, ]
+            bootstrap = bootstrap.iloc[:, sample(feature_index, self.n_of_features)]
+            labels = y_train.loc[bootstrap.index]
 
-            bootstrap = pd.concat([bootstrap, labels], axis=1)
+
 
             reg_tree = self.estimator(max_depth=self.max_depth, min_samples_split=self.min_samples_split)
-            reg_tree.fit(bootstrap, target_col)
+            reg_tree.fit(bootstrap, labels)
             self.estimators.append(reg_tree)
 
-            self.save_to_history(X_train, X_test)
+            self.save_to_history(X_train, y_train, X_test, y_test)
 
             if (count%verbose == 0) | (count+1 == self.n_estimators):
                 print(f'Train Loss: {self.history["train"][-1]}\tTest Loss: {self.history["test"][-1]}')
 
-    def save_to_history(self, X_train, X_test):
-        self.history['train'].append(self.mse.loss(X_train[self.target_col], self.predict(X_train)))
-        self.history['test'].append(self.mse.loss(X_test[self.target_col], self.predict(X_test)))
+    def save_to_history(self, X_train, y_train, X_test, y_test):
+        self.history['train'].append(self.mse.loss(y_train, self.predict(X_train)))
+        self.history['test'].append(self.mse.loss(y_test, self.predict(X_test)))
 
 
     def predict(self, data):
@@ -175,9 +177,9 @@ class RandomForestClassifier(RandomForestRegressor):
         super().__init__(max_depth, min_samples_split, n_estimators, bootstrap_size, n_of_features)
         self.estimator = DecisionTreeClassifier
 
-    def save_to_history(self, X_train, X_test):
-        self.history['train'].append((X_train[self.target_col].values == self.predict(X_train).values).sum() / len(X_train))
-        self.history['test'].append((X_test[self.target_col].values == self.predict(X_test).values).sum() / len(X_test))
+    def save_to_history(self, X_train, y_train, X_test, y_test):
+        self.history['train'].append((y_train.values == self.predict(X_train).values).sum() / len(X_train))
+        self.history['test'].append((y_test.values == self.predict(X_test).values).sum() / len(X_test))
 
     def predict(self, data):
         predictions = pd.DataFrame([])

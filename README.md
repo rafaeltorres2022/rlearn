@@ -280,17 +280,18 @@ print(classification_report(y_test, convnn_regularization.predict(X_test)))
 
 ### Regression with Trees
 
-Dataset used for Regression. My implementation of Decision Trees requieres DataFrame as input.
+Dataset used for Regression. My implementation of Decision Trees requires DataFrame as input.
 
 
 ```python
 from rlearn.tree_utils import plot_tree
 
-data = load_diabetes(as_frame=True)['frame']
-split_delimiter = int(len(data)*0.7)
-X_train = data[:split_delimiter]
-X_test = data[split_delimiter:]
-target_col = 'target'
+X, y = load_diabetes(return_X_y=True, as_frame=True)
+split_delimiter = int(len(X)*0.7)
+X_train = X[:split_delimiter]
+y_train = y[:split_delimiter]
+X_test = X[split_delimiter:]
+y_test = y[split_delimiter:]
 ```
 
 #### Decision Tree Regressor
@@ -299,9 +300,9 @@ target_col = 'target'
 ```python
 from rlearn.tree import DecisionTreeRegressor
 dtr = DecisionTreeRegressor(max_depth=4, min_samples_split=20)
-dtr.fit(X_train, target_col)
+dtr.fit(X_train, y_train)
 
-print('Mean Squared Error:',mean_squared_error(X_test[target_col], dtr.predict(X_test)))
+print('Mean Squared Error:',mean_squared_error(y_test, dtr.predict(X_test)))
 ```
 
     Mean Squared Error: 4193.494500508087
@@ -327,19 +328,19 @@ plot_tree(dtr)
 ```python
 from rlearn.tree import RandomForestRegressor
 
-forest = RandomForestRegressor(n_estimators=50)
-forest.fit(X_train, target_col, X_test, verbose=10)
+forest = RandomForestRegressor(max_depth=5, n_estimators=100, bootstrap_size=int(np.sqrt(len(X_train))))
+forest.fit(X_train, y_train, X_test, y_test, verbose=20)
 
-print('Mean Squared Error:',mean_squared_error(X_test[target_col], forest.predict(X_test)))
+print('Mean Squared Error:',mean_squared_error(y_test, forest.predict(X_test)))
 ```
 
-    Train Loss: 5174.557751644285	Test Loss: 5320.667066782897
-    Train Loss: 3157.2843122491886	Test Loss: 3408.2080264220394
-    Train Loss: 3107.0084756732667	Test Loss: 3283.2990424165528
-    Train Loss: 3036.1481976213286	Test Loss: 3280.38539982366
-    Train Loss: 3018.4580685421315	Test Loss: 3257.068817638672
-    Train Loss: 3023.170500295181	Test Loss: 3202.1667270629787
-    Mean Squared Error: 3202.1667270629787
+    Train Loss: 8889.730582524271	Test Loss: 9582.218045112782
+    Train Loss: 3677.895300618629	Test Loss: 3677.89090807494
+    Train Loss: 3468.3139892057757	Test Loss: 3295.6151943570385
+    Train Loss: 3464.479212949313	Test Loss: 3291.0131511277013
+    Train Loss: 3529.51256273258	Test Loss: 3343.131945322952
+    Train Loss: 3483.868598453883	Test Loss: 3319.7515838969816
+    Mean Squared Error: 3319.7515838969816
     
 
 ### Classification with Trees
@@ -349,12 +350,10 @@ Dataset used for classification with Trees.
 
 ```python
 from sklearn.datasets import load_wine
+from sklearn.model_selection import train_test_split
 
-data = load_wine(as_frame=True)['frame'].sample(frac=1)
-split_delimiter = int(len(data)*0.7)
-X_train = data[:split_delimiter]
-X_test = data[split_delimiter:]
-target_col = 'target'
+X, y = load_wine(return_X_y=True, as_frame=True)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, shuffle=True)
 ```
 
 #### Decision Tree Classifier
@@ -363,20 +362,20 @@ target_col = 'target'
 ```python
 from rlearn.tree import DecisionTreeClassifier
 dtc = DecisionTreeClassifier(max_depth=4, min_samples_split=20)
-dtc.fit(X_train, target_col)
+dtc.fit(X_train, y_train)
 
-print(classification_report(X_test[target_col], dtc.predict(X_test)))
+print(classification_report(y_test, dtc.predict(X_test)))
 ```
 
                   precision    recall  f1-score   support
     
-               0       0.88      1.00      0.94        23
-               1       0.90      0.86      0.88        21
-               2       0.88      0.70      0.78        10
+               0       0.74      1.00      0.85        17
+               1       1.00      0.68      0.81        22
+               2       0.94      1.00      0.97        15
     
-        accuracy                           0.89        54
-       macro avg       0.89      0.85      0.86        54
-    weighted avg       0.89      0.89      0.89        54
+        accuracy                           0.87        54
+       macro avg       0.89      0.89      0.88        54
+    weighted avg       0.90      0.87      0.87        54
     
     
 
@@ -400,27 +399,27 @@ plot_tree(dtc)
 ```python
 from rlearn.tree import RandomForestClassifier
 
-forest = RandomForestClassifier(n_estimators=50)
-forest.fit(X_train, target_col, X_test, verbose=10)
+forest = RandomForestClassifier(max_depth=5, n_estimators=200, bootstrap_size=int(np.sqrt(len(X_train))))
+forest.fit(X_train, y_train, X_test, y_test, verbose=40)
 
-print(classification_report(X_test[target_col], forest.predict(X_test)))
+print(classification_report(y_test, forest.predict(X_test)))
 ```
 
-    Train Loss: 0.7983870967741935	Test Loss: 0.7592592592592593
-    Train Loss: 0.967741935483871	Test Loss: 0.9444444444444444
-    Train Loss: 0.9758064516129032	Test Loss: 0.9259259259259259
-    Train Loss: 0.9838709677419355	Test Loss: 0.9074074074074074
-    Train Loss: 0.9838709677419355	Test Loss: 0.9259259259259259
+    Train Loss: 0.8790322580645161	Test Loss: 0.8333333333333334
     Train Loss: 0.9919354838709677	Test Loss: 0.9259259259259259
+    Train Loss: 0.9838709677419355	Test Loss: 0.9629629629629629
+    Train Loss: 0.9838709677419355	Test Loss: 0.9629629629629629
+    Train Loss: 0.9838709677419355	Test Loss: 0.9629629629629629
+    Train Loss: 0.9838709677419355	Test Loss: 0.9814814814814815
                   precision    recall  f1-score   support
     
-               0       0.83      0.94      0.88        16
-               1       0.95      0.86      0.90        22
-               2       1.00      1.00      1.00        16
+               0       1.00      1.00      1.00        17
+               1       1.00      0.95      0.98        22
+               2       0.94      1.00      0.97        15
     
-        accuracy                           0.93        54
-       macro avg       0.93      0.93      0.93        54
-    weighted avg       0.93      0.93      0.93        54
+        accuracy                           0.98        54
+       macro avg       0.98      0.98      0.98        54
+    weighted avg       0.98      0.98      0.98        54
     
     
 
