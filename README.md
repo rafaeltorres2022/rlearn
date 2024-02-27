@@ -20,6 +20,7 @@ Learning machine learning algorithms.
     - [Regression](#regression-with-trees)  
         - [Decision Tree](#decision-tree-regressor)  
         - [Random Forest](#random-forest-regressor)  
+        - [Gradient Boost Regressor](#gradient-boost-regressor)
     - [Classification](#classification-with-trees)  
         - [Decision Tree](#decision-tree-classifier)
         - [Random Forest](#random-forest-classifier)
@@ -343,6 +344,25 @@ print('Mean Squared Error:',mean_squared_error(y_test, forest.predict(X_test)))
     Mean Squared Error: 3319.7515838969816
     
 
+#### Gradient Boost Regressor
+
+
+```python
+from rlearn.tree import GradientBoostRegressor
+
+gbr = GradientBoostRegressor(max_depth=3, frac_of_samples=0.7, min_samples_split=20, max_features=4, n_estimators=30)
+gbr.fit(X_train, y_train, X_test, y_test, verbose=10)
+
+print('Mean Squared Error:',mean_squared_error(y_test, gbr.predict(X_test)))
+```
+
+    Estimators: 0	Train Loss: 5669.00298388741	Validation Loss: 5331.155125511168
+    Estimators: 10	Train Loss: 3034.066089784755	Validation Loss: 3396.5728142769017
+    Estimators: 20	Train Loss: 2310.982276701981	Validation Loss: 3003.3174716475755
+    Estimators: 29	Train Loss: 1979.0520699662327	Validation Loss: 3018.055546515523
+    Mean Squared Error: 3018.055546515523
+    
+
 ### Classification with Trees
 
 Dataset used for classification with Trees.
@@ -388,7 +408,7 @@ plot_tree(dtc)
 
 
     
-![svg](README_files/README_45_0.svg)
+![svg](README_files/README_47_0.svg)
     
 
 

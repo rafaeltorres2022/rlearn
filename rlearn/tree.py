@@ -186,3 +186,60 @@ class RandomForestClassifier(RandomForestRegressor):
         for tree in self.estimators:
             predictions = pd.concat([predictions, tree.predict(data)], axis=1)
         return predictions.mode(axis=1).iloc[:,0]
+    
+class GradientBoostRegressor:
+
+    def __init__(self, learning_rate = 0.1, n_estimators = 100, frac_of_samples = 1, max_features = -1, min_samples_split = 2, max_depth = 2) -> None:
+        self.learning_rate = learning_rate
+        self.n_estimators = n_estimators
+        self.frac_of_samples = frac_of_samples
+        self.max_features = max_features
+        self.min_samples_split = min_samples_split
+        self.max_depth = max_depth
+        self.first_prediction = 0
+        self.estimators = []
+        self.mse = MeanSquaredError()
+        self.history = {
+            'train':[],
+            'test':[]
+        }
+        
+    def fit(self, X_train, y_train, X_test, y_test, verbose=10):
+        self.first_prediction = y_train.mean()
+        n = len(X_train)
+        n_cols = len(X_train.columns)
+        if self.max_features == -1: self.max_features = n_cols
+
+        for n_estimator in range(self.n_estimators):
+            residuals = y_train - self.predict(X_train)
+            residuals.rename('Residuals', inplace=True)
+            new_estimator = DecisionTreeRegressor(self.max_depth, self.min_samples_split)
+            subsample = X_train.sample(
+                int(n * self.frac_of_samples)).iloc[
+                    :, sample(range(n_cols),
+                        k=self.max_features)]
+            new_estimator.fit(subsample, residuals.loc[subsample.index])
+            self.estimators.append(new_estimator)
+
+            self.save_history(X_train, y_train, X_test, y_test)
+            
+            if (n_estimator % verbose == 0) | (n_estimator+1 == self.n_estimators):
+                self.print_loss(n_estimator)
+
+    def predict(self, data):
+        pred = self.first_prediction
+        for estimator in self.estimators:
+            pred += estimator.predict(data) * self.learning_rate
+
+        return pred
+    
+    def save_history(self, X_train, y_train, X_test, y_test):
+        self.history['train'].append(
+            self.mse.loss(y_train, self.predict(X_train))
+        )
+        self.history['test'].append(
+            self.mse.loss(y_test, self.predict(X_test))
+        )
+
+    def print_loss(self, n_estimator):
+        print(f'Estimators: {n_estimator}\tTrain Loss: {self.history["train"][-1]}\tValidation Loss: {self.history["test"][-1]}')
