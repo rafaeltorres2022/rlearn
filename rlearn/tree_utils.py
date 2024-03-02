@@ -15,7 +15,6 @@ def find_best_split(data, target_col, is_classification=True, parent_score=10e10
     for col in data.drop(target_col, axis=1).columns:
         is_numeric = is_col_numeric(data, col)
         possible_conditions = find_numeric_condition(data, col) if is_numeric else find_categorical_codition(data, col)
-        
         for condition in possible_conditions:
             new_metric_result = metric_split_condition(data, col, condition, target_col, is_numeric, is_classification)
             
@@ -30,7 +29,10 @@ def find_numeric_condition(data, col):
     return data[col].sort_values().rolling(2).mean().dropna().to_numpy()
 
 def find_categorical_codition(data, col):
-    return data[col].unique().to_numpy()
+    try:
+        return data[col].unique().to_numpy()
+    except:
+        print('Categorical features need to be converted into Category datatype.')
 
 
 def metric_split_condition(data, col, split_condition, target_col, is_numeric, is_classification):

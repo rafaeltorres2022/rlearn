@@ -356,11 +356,11 @@ gbr.fit(X_train, y_train, X_test, y_test, verbose=10)
 print('Mean Squared Error:',mean_squared_error(y_test, gbr.predict(X_test)))
 ```
 
-    Estimators: 0	Train Loss: 5669.00298388741	Validation Loss: 5331.155125511168
-    Estimators: 10	Train Loss: 3034.066089784755	Validation Loss: 3396.5728142769017
-    Estimators: 20	Train Loss: 2310.982276701981	Validation Loss: 3003.3174716475755
-    Estimators: 29	Train Loss: 1979.0520699662327	Validation Loss: 3018.055546515523
-    Mean Squared Error: 3018.055546515523
+    Estimators: 0	Train Loss: 5597.333015255618	Validation Loss: 5361.534188078531
+    Estimators: 10	Train Loss: 3232.3129922014514	Validation Loss: 3594.923680029551
+    Estimators: 20	Train Loss: 2263.3096834774647	Validation Loss: 3111.1424773070717
+    Estimators: 29	Train Loss: 1921.760692829892	Validation Loss: 3079.7276552377384
+    Mean Squared Error: 3060.172169586149
     
 
 ### Classification with Trees
@@ -440,6 +440,36 @@ print(classification_report(y_test, forest.predict(X_test)))
         accuracy                           0.98        54
        macro avg       0.98      0.98      0.98        54
     weighted avg       0.98      0.98      0.98        54
+    
+    
+
+#### Gradient Boosting Classifier
+
+
+```python
+from rlearn.tree import GradientBoostClassifier
+
+gbc = GradientBoostClassifier(n_estimators=200, max_depth=5, frac_of_samples=0.3, max_features=int(np.sqrt(X_train.shape[1])))
+gbc.fit(X_train, y_train, X_test, y_test, verbose=40)
+
+print(classification_report(y_test, gbc.predict(X_test)))
+```
+
+    Estimators: 0	Train Loss: 0.3709677419354839	Validation Loss: 0.46296296296296297
+    Estimators: 40	Train Loss: 1.0	Validation Loss: 1.0
+    Estimators: 80	Train Loss: 1.0	Validation Loss: 0.9629629629629629
+    Estimators: 120	Train Loss: 1.0	Validation Loss: 0.9629629629629629
+    Estimators: 160	Train Loss: 1.0	Validation Loss: 0.9814814814814815
+    Estimators: 199	Train Loss: 1.0	Validation Loss: 0.9814814814814815
+                  precision    recall  f1-score   support
+    
+               0       1.00      1.00      1.00        14
+               1       1.00      1.00      1.00        25
+               2       1.00      1.00      1.00        15
+    
+        accuracy                           1.00        54
+       macro avg       1.00      1.00      1.00        54
+    weighted avg       1.00      1.00      1.00        54
     
     
 
