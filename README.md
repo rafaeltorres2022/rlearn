@@ -20,10 +20,11 @@ Learning machine learning algorithms.
     - [Regression](#regression-with-trees)  
         - [Decision Tree](#decision-tree-regressor)  
         - [Random Forest](#random-forest-regressor)  
-        - [Gradient Boost Regressor](#gradient-boost-regressor)
+        - [Gradient Boosting Regressor](#gradient-boosting-regressor)
     - [Classification](#classification-with-trees)  
         - [Decision Tree](#decision-tree-classifier)
         - [Random Forest](#random-forest-classifier)
+        - [Gradient Boosting Classifier](#gradient-boosting-classifier)
 
 ## [Linear Models](rlearn\linear_model.py)
 
@@ -344,7 +345,7 @@ print('Mean Squared Error:',mean_squared_error(y_test, forest.predict(X_test)))
     Mean Squared Error: 3319.7515838969816
     
 
-#### Gradient Boost Regressor
+#### Gradient Boosting Regressor
 
 
 ```python
