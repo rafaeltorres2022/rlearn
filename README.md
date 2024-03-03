@@ -474,4 +474,29 @@ print(classification_report(y_test, gbc.predict(X_test)))
     
     
 
+## [Clusters](rlearn/cluster.py)  
+<sub>[Back to top.](#table-of-contents)</sub>
+
+Dataset used for clustering.
+
+
+```python
+from sklearn.datasets import load_iris
+X, y = load_iris(return_X_y=True)
+
+```
+
+#### K-Means
+
+
+```python
+from rlearn.cluster import KMeans
+
+kmeans = KMeans(k=3)
+kmeans.fit(X[:,[0,1]])
+_ = kmeans.make_animation(X[:,[0,1]], interval=1000)
+```
+
+![K-Means training.](README_files/kmeans.gif)
+
 <sub>[Back to top.](#table-of-contents)</sub>
