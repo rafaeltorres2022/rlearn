@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.stats import mode
+from rlearn.cluster_utils import euclidian_distance
 
 class KNearestNeighbors:
 
@@ -16,7 +17,7 @@ class KNearestNeighbors:
     def predict(self, X):
         result = []
         for point1 in X:
-            result.append(self.define_result(y_[np.argsort([euclidian_distance(point1, point2) for point2 in X_])[1:self.k+1]]))
+            result.append(self.define_result(self.y[np.argsort([euclidian_distance(point1, point2) for point2 in self.X])[1:self.k+1]]))
         return result
     
     def define_result(self, args):

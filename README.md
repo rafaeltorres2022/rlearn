@@ -25,6 +25,13 @@ Learning machine learning algorithms.
         - [Decision Tree](#decision-tree-classifier)
         - [Random Forest](#random-forest-classifier)
         - [Gradient Boosting Classifier](#gradient-boosting-classifier)
+- [Clusters](#clusters)
+    - [K-Means](#k-means)
+- [Neighbors](#neighbours)  
+    - [Classification](#classification-with-knn)  
+        - [K-Nearest Neighbors](#k-nearest-neighbours-classifier)
+    - [Regression](#regression-with-knn)
+        - [K-Nearest Neighbors Regressor](#k-nearest-neighbours-regressor)
 
 ## [Linear Models](rlearn\linear_model.py)
 
@@ -498,5 +505,70 @@ _ = kmeans.make_animation(X[:,[0,1]], interval=1000)
 ```
 
 ![K-Means training.](README_files/kmeans.gif)
+
+## [Neighbors](rlearn/neighbour.py)
+<sub>[Back to top.](#table-of-contents)</sub>
+
+### Classification with KNN
+
+Dataset used for classification with neighbours algorithms.
+
+
+```python
+from sklearn.datasets import load_wine
+X, y = load_wine(return_X_y=True)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.20, random_state=42, shuffle=True)
+```
+
+#### K-Nearest Neighbours Classifier
+
+
+```python
+from rlearn.neighbour import KNearestNeighbors
+knn = KNearestNeighbors(14)
+knn.fit(X_train, y_train)
+print(classification_report(y_test, knn.predict(X_test)))
+```
+
+                  precision    recall  f1-score   support
+    
+               0       0.88      1.00      0.93        14
+               1       0.82      0.64      0.72        14
+               2       0.44      0.50      0.47         8
+    
+        accuracy                           0.75        36
+       macro avg       0.71      0.71      0.71        36
+    weighted avg       0.76      0.75      0.75        36
+    
+    
+
+### Regression with KNN
+
+Dataset used for regression.
+
+
+```python
+from sklearn.datasets import fetch_california_housing
+housing = fetch_california_housing()
+X_train, X_test, y_train, y_test = train_test_split(housing.data, housing.target, test_size=0.20, random_state=42, shuffle=True)
+```
+
+#### K-Nearest Neighbours Regressor
+
+
+```python
+from rlearn.neighbour import KNearestNeighborsRegressor
+
+knnr = KNearestNeighborsRegressor(10)
+knnr.fit(X_train, y_train)
+mean_squared_error(y_test, knnr.predict(X_test))
+```
+
+
+
+
+    0.25277777777777777
+
+
 
 <sub>[Back to top.](#table-of-contents)</sub>

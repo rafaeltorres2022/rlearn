@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
+from rlearn.cluster_utils import euclidian_distance
 
 class KMeans:
 
@@ -13,15 +14,11 @@ class KMeans:
     def initialize_centroids(self, X):
         return X[np.random.choice(range(len(X)), size=self.k)]
 
-
-    def euclidian_distance(self, point1, point2):
-        return np.sqrt(((point1 - point2) ** 2).sum())
-
     def choose_closest_centroid(self, point, centroids=None):
         if centroids is not None:
-            return np.argmin([self.euclidian_distance(point, centroid) for centroid in centroids])
+            return np.argmin([euclidian_distance(point, centroid) for centroid in centroids])
         else:
-            return np.argmin([self.euclidian_distance(point, centroid) for centroid in self.centroids])
+            return np.argmin([euclidian_distance(point, centroid) for centroid in self.centroids])
 
     def choose_new_centroids(self, X, new_labels):
         for k_ in range(len(self.centroids)):
@@ -30,7 +27,7 @@ class KMeans:
     def get_inertia(self, X, new_labels):
         total_inertia = 0
         for k_, centroid in enumerate(self.centroids):
-            total_inertia += np.apply_along_axis(self.euclidian_distance, axis=1, arr=X[new_labels == k_], point2 = centroid).sum()
+            total_inertia += np.apply_along_axis(euclidian_distance, axis=1, arr=X[new_labels == k_], point2 = centroid).sum()
         return total_inertia
 
     def fit(self, X, tol = 0.01):
