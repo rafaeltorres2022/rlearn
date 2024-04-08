@@ -27,6 +27,7 @@ Learning machine learning algorithms.
         - [Gradient Boosting Classifier](#gradient-boosting-classifier)
 - [Clusters](#clusters)
     - [K-Means](#k-means)
+    - [DBSCAN](#dbscan)
 - [Neighbors](#neighbours)  
     - [Classification](#classification-with-knn)  
         - [K-Nearest Neighbors](#k-nearest-neighbours-classifier)
@@ -505,6 +506,23 @@ _ = kmeans.make_animation(X[:,[0,1]], interval=1000)
 ```
 
 ![K-Means training.](README_files/kmeans.gif)
+
+#### DBSCAN
+
+
+```python
+from rlearn.cluster import DBSCAN
+
+d = DBSCAN(eps=0.3, algorithm='brute')
+d.fit(X[:,[0,1]])
+d.make_animation(X)
+```
+
+    it may take a while...
+    Done!
+    
+
+![DBSCAN training.](README_files/dbscan.gif)
 
 ## [Neighbors](rlearn/neighbour.py)
 <sub>[Back to top.](#table-of-contents)</sub>

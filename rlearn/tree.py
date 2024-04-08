@@ -35,7 +35,7 @@ class Node:
         return text
 
     def get_name(self) -> str:
-        return self.__hash__()
+        return str(self.__hash__())
 
     def set_split_info(self, best_col_split, best_split_value_to_split, best_evaluation_metric, is_condition_numeric):
         self.col_split = best_col_split
