@@ -4,6 +4,7 @@ from rlearn.tree_utils import *
 from random import sample
 from rlearn.metrics import MeanSquaredError
 from scipy.special import softmax
+from scipy.stats import mode
 
 
 class Node:
@@ -196,8 +197,8 @@ class RandomForestRegressor:
         max_depth=2,
         min_samples_split=2,
         n_estimators=200,
-        bootstrap_size=500,
-        n_of_features=5,
+        bootstrap_size=-1,
+        n_of_features=-1,
     ) -> None:
         self.max_depth = max_depth
         self.min_samples_split = min_samples_split
@@ -205,42 +206,52 @@ class RandomForestRegressor:
         self.estimators = []
         self.bootstrap_size = bootstrap_size
         self.n_of_features = n_of_features
-        self.target_col = ""
         self.history = {"train": [], "test": []}
         self.estimator = DecisionTreeRegressor
         self.mse = MeanSquaredError()
+        self.precs = None
 
     def fit(self, X_train, y_train, X_test, y_test, verbose=5):
-        self.target_col = y_train.name
-        feature_index = [_ for _ in range(len(X_train.columns))]
-
+        if self.bootstrap_size == -1:
+            self.bootstrap_size = len(X_train)
+        if self.n_of_features == -1:
+            self.n_of_features = X_train.shape[1]
         for count in range(self.n_estimators):
-            bootstrap = X_train.sample(self.bootstrap_size, replace=True).loc[:,]
-            bootstrap = bootstrap.iloc[:, sample(feature_index, self.n_of_features)]
-            labels = y_train.loc[bootstrap.index]
+            bootstrap_x = np.random.choice(len(X_train), size=self.bootstrap_size)
+            bootstrap_features = np.random.choice(
+                X_train.shape[1], size=self.n_of_features, replace=False
+            )
 
             reg_tree = self.estimator(
                 max_depth=self.max_depth, min_samples_split=self.min_samples_split
             )
-            reg_tree.fit(bootstrap, labels)
+            reg_tree.fit(
+                X_train[
+                    np.ix_(bootstrap_x, np.sort(bootstrap_features))
+                ],  # bootstrap_x],
+                y_train[bootstrap_x],
+            )
             self.estimators.append(reg_tree)
 
             self.save_to_history(X_train, y_train, X_test, y_test)
 
-            if (count % verbose == 0) | (count + 1 == self.n_estimators):
-                print(
-                    f'Train Loss: {self.history["train"][-1]}\tTest Loss: {self.history["test"][-1]}'
-                )
+            self.print_train_log(count, verbose)
+
+    def print_train_log(self, count, verbose):
+        if (count % verbose == 0) | (count + 1 == self.n_estimators):
+            print(
+                f'Train Loss: {self.history["train"][-1]}\tTest Loss: {self.history["test"][-1]}'
+            )
 
     def save_to_history(self, X_train, y_train, X_test, y_test):
         self.history["train"].append(self.mse.loss(y_train, self.predict(X_train)))
         self.history["test"].append(self.mse.loss(y_test, self.predict(X_test)))
 
     def predict(self, data):
-        predictions = pd.DataFrame([])
-        for tree in self.estimators:
-            predictions = pd.concat([predictions, tree.predict(data)], axis=1)
-        return predictions.mean(axis=1)
+        predictions = self.estimators[0].predict(data)
+        for tree in self.estimators[1:]:
+            predictions = np.c_[predictions, tree.predict(data)]
+        return np.mean(predictions, axis=1)
 
 
 class RandomForestClassifier(RandomForestRegressor):
@@ -249,27 +260,34 @@ class RandomForestClassifier(RandomForestRegressor):
         max_depth=2,
         min_samples_split=2,
         n_estimators=200,
-        bootstrap_size=500,
-        n_of_features=5,
+        bootstrap_size=-1,
+        n_of_features=-1,
     ) -> None:
         super().__init__(
             max_depth, min_samples_split, n_estimators, bootstrap_size, n_of_features
         )
         self.estimator = DecisionTreeClassifier
+        self.precs = None
 
     def save_to_history(self, X_train, y_train, X_test, y_test):
         self.history["train"].append(
-            (y_train.values == self.predict(X_train).values).sum() / len(X_train)
+            (y_train == self.predict(X_train)).sum() / len(X_train)
         )
         self.history["test"].append(
-            (y_test.values == self.predict(X_test).values).sum() / len(X_test)
+            (y_test == self.predict(X_test)).sum() / len(X_test)
         )
 
+    def print_train_log(self, count, verbose):
+        if (count % verbose == 0) | (count + 1 == self.n_estimators):
+            print(
+                f'Accuracy: {self.history["train"][-1]}\tAccuracy: {self.history["test"][-1]}'
+            )
+
     def predict(self, data):
-        predictions = pd.DataFrame([])
-        for tree in self.estimators:
-            predictions = pd.concat([predictions, tree.predict(data)], axis=1)
-        return predictions.mode(axis=1).iloc[:, 0]
+        predictions = self.estimators[0].predict(data)
+        for tree in self.estimators[1:]:
+            predictions = np.c_[predictions, tree.predict(data)]
+        return mode(predictions, axis=1)[0]
 
 
 class GradientBoostRegressor:
