@@ -66,6 +66,7 @@ def sum_squared_residuals(classes):
     return ssr
 
 def is_col_numeric(data, col):
+    if data[col].dtype == 'category': return False
     return pd.to_numeric(data[col], errors='coerce').notnull().all()
 
 def plot_tree(dtc, shape='box'):
