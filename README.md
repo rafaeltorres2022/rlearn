@@ -33,6 +33,8 @@ Learning machine learning algorithms.
         - [K-Nearest Neighbors](#k-nearest-neighbours-classifier)
     - [Regression](#regression-with-knn)
         - [K-Nearest Neighbors Regressor](#k-nearest-neighbours-regressor)
+- [Bayes](#bayes)
+    - [Gaussian Naive Bayes](#gaussiannb)
 
 ## [Linear Models](rlearn\linear_model.py)
 
@@ -647,5 +649,43 @@ mean_squared_error(y_test, knnr.predict(X_test))
     1.1590791278976151
 
 
+
+## [Bayes](rlearn/bayes.py)
+<sub>[Back to top.](#table-of-contents)</sub>
+
+#### GaussianNB
+
+
+```python
+from sklearn.datasets import load_wine
+from sklearn.model_selection import train_test_split
+
+X, y = load_wine(return_X_y=True)
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.3, random_state=42, shuffle=True
+)
+```
+
+
+```python
+from rlearn.bayes import GaussianNB
+
+gnb = GaussianNB()
+gnb.fit(X_train, y_train)
+
+print(classification_report(y_test, gnb.predict(X_test)))
+```
+
+                  precision    recall  f1-score   support
+    
+               0       1.00      1.00      1.00        19
+               1       1.00      1.00      1.00        21
+               2       1.00      1.00      1.00        14
+    
+        accuracy                           1.00        54
+       macro avg       1.00      1.00      1.00        54
+    weighted avg       1.00      1.00      1.00        54
+    
+    
 
 <sub>[Back to top.](#table-of-contents)</sub>
